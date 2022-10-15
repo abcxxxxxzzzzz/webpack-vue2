@@ -82,7 +82,7 @@ export const ManageDelele = (params) => {
 export const ManageCacheUpdate = (data) => {
     return axios.request({
         url: '/api/v1/manage/cache',
-        method: 'delete',
+        method: 'post',
         data
     })
 }
