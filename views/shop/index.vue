@@ -429,7 +429,8 @@ export default {
         handleShow(index, row) {
             this.domainTitle = row.name
             this.domainVisible = true
-            var domainList = row.domain.split('\n')
+            // var domainList = row.domain.split('\n')
+            var domainList = row.domain
             var newArr = []
             var newArr = domainList.map(item => {
                 return {
