@@ -147,9 +147,9 @@
                     </el-table-column>
                     <el-table-column prop="m_url" label="移动地址"  width="180px"></el-table-column>
                     <el-table-column prop="p_url" label="默认地址"  width="180px"></el-table-column>
-                    <el-table-column prop="expire_date" label="证书过期日期" width="160px"></el-table-column>
-                    <el-table-column prop="updated_at" label="更新时间" width="160px"></el-table-column>
-                    <el-table-column prop="created_at" label="创建时间" width="160px"></el-table-column>
+                    <el-table-column prop="expire_date" label="证书过期日期" width="180px"></el-table-column>
+                    <el-table-column prop="updated_at" label="更新时间" width="180px"></el-table-column>
+                    <el-table-column prop="created_at" label="创建时间" width="180px"></el-table-column>
                     
 
 
