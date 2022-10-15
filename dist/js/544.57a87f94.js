@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkwebpack_vue"]=self["webpackChunkwebpack_vue"]||[]).push([[544],{1544:function(e,u,n){n.r(u),n.d(u,{default:function(){return s}});var a=function(){var e=this,u=e._self._c;return u("div",[e._v("我是 page 2 页面")])},t=[],r={name:"page2",data(){return{}}},l=r,c=n(1001),p=(0,c.Z)(l,a,t,!1,null,null,null),s=p.exports}}]);
+//# sourceMappingURL=544.57a87f94.js.map
