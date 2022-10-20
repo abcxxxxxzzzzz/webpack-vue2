@@ -105,3 +105,22 @@ export const ManageDepleyToNginx = (params) => {
         method: 'post',
     })
 }
+
+
+// 申请证书
+export const ManageApplySSLAdd = (params) => {
+    return axios.request({
+        url: '/api/v1/manage/ssl/' + params.id,
+        method: 'post',
+    })
+}
+
+
+// 查询申请证书情况
+export const ManageApplySSLShow = (params) => {
+    return axios.request({
+        url: '/api/v1/manage/ssl/',
+        method: 'get',
+        params
+    })
+}

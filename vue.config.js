@@ -18,7 +18,7 @@ module.exports = defineConfig({
     // 代理访问
     proxy: {
       'api': {
-        target: 'http://127.0.0.1/api',
+        target: 'http://127.0.0.1:8081/api',
         ws: true,
         changeOrigin: true,
         pathRewrite: {

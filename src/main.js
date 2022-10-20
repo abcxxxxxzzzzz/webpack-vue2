@@ -38,7 +38,7 @@ import {
   Loading,
   Select,
   Option,
-  Tooltip
+  Tooltip,
 } from 'element-ui';
 
 
@@ -80,11 +80,13 @@ Vue.use(Tooltip);
 
 
 
+
 Vue.config.productionTip = false
 Vue.prototype.$http = http
 Vue.prototype.$message = Message
 Vue.prototype.$prompt = MessageBox.prompt
-
+Vue.prototype.$confirm = MessageBox.confirm
+Vue.prototype.$alert = MessageBox.alert
 
 new Vue({
   store,

@@ -110,7 +110,7 @@
 
                     <el-table-column type="selection" width="55"> </el-table-column>
                     <el-table-column prop="id" label="ID"></el-table-column>
-                    <el-table-column prop="name" label="站点名称" width="150px"></el-table-column>
+                    <el-table-column prop="name" label="站点分组" width="150px"></el-table-column>
                     <!-- <el-table-column prop="crt_pem" label="证书CRT" :show-overflow-tooltip="true" width="100px"></el-table-column>
                     <el-table-column prop="key_pem" label="证书KEY" :show-overflow-tooltip="true" width="100px"></el-table-column> -->
                     
@@ -137,7 +137,7 @@
                             <el-tag :key="scope.$index" type="info" effect="dark" size="mini" v-else-if="scope.row.is_query == false"> Close </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="is_deploy" label="已部署">
+                    <el-table-column prop="is_deploy" label="HTTPS已部署">
                         <template slot-scope="scope">
                             <el-tag :key="scope.$index" type="success" effect="dark" size="mini" v-if="scope.row.is_deploy == true"> Yes
                             </el-tag>
@@ -153,7 +153,7 @@
                     
 
 
-                    <el-table-column label="操作" width="180" fixed="right">
+                    <el-table-column label="操作" width="240" fixed="right">
                             <!-- <template slot="header" slot-scope="scope">
                                 <el-input v-model="searchName" size="mini" placeholder="搜索站点名称" />
                             </template> -->
@@ -162,9 +162,18 @@
                             <el-button size="mini" @click="handleShow(scope.$index, scope.row)" icon="el-icon-view" circle></el-button>
                             <el-button size="mini" type="primary" @click="handleEdit(scope.$index, scope.row)" icon="el-icon-edit-outline" circle></el-button>
                             <el-button size="mini" type="danger" @click="handleDelete(scope.$index, scope.row)" icon="el-icon-delete" circle></el-button>
-                            <el-tooltip class="item" effect="dark" content="部署到 NGINX" placement="top-start" v-if="scope.row.is_ssl">
+                            <el-tooltip class="item" effect="dark" content="部署 HTTPS 到 NGINX" placement="top-start" v-if="scope.row.is_ssl">
                                 <el-button size="mini"  type="success"  @click="handleDeployNgx(scope.row)" icon="el-icon-s-promotion" circle></el-button>
                             </el-tooltip>
+
+                            <el-tooltip class="item" effect="dark" content="申请SSL证书" placement="top-start" v-if="scope.row.is_ssl">
+                                <el-button size="mini" type="warning" @click="handleApplySSLAdd(scope.row)" icon="el-icon-lock" circle plain></el-button>
+                            </el-tooltip>
+
+                            <!-- <el-tooltip class="item" effect="dark" content="站点证书申请状态查看" placement="top-start" v-if="scope.row.is_ssl && task_id !== ''">
+                                <el-button size="mini" type="warning" @click="handleApplySSLShow()" icon="el-icon-unlock" circle plain>
+                                </el-button>
+                            </el-tooltip> -->
                         </template>
                     </el-table-column>
                 </el-table>
@@ -186,12 +195,27 @@
         </el-drawer>
 
     <!-- </div> -->
+
+
+        <el-dialog title="提示" :visible.sync="centerDialogVisible" width="40%" center>
+            <p v-html="msgStr">{{ msgStr }}</p>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="centerDialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="centerDialogVisible = false">确 定</el-button>
+            </span>
+        </el-dialog>
+
+
     </el-card>
+
+
+
+
 </template>
 
 
 <script>
-import { ManageList, ManageShow, ManageAdd, ManageUpdate, ManageDelele, ManageCacheUpdate, ManageCacheDelete, ManageDepleyToNginx } from "../../api/data"
+import { ManageList, ManageShow, ManageAdd, ManageUpdate, ManageDelele, ManageCacheUpdate, ManageCacheDelete, ManageDepleyToNginx, ManageApplySSLAdd, ManageApplySSLShow  } from "../../api/data"
 
 
 export default {
@@ -230,6 +254,7 @@ export default {
 
         return {
             loading: false,
+            ApplySSLStatus: '',
             // 查询时，分页相关
             pageSizes: [20, 50, 100, 300],
             per_page: 20,    // 每页数据
@@ -239,7 +264,10 @@ export default {
             search: '',     // 搜索内容
             searchName: '', // 表格内数据搜索
             
-  
+            sslBanVisible: '',
+            task_id: '',
+            centerDialogVisible: false,
+            msgStr: '',
 
             // 模特框弹出控制变量
             dialogVisible: false,
@@ -405,12 +433,13 @@ export default {
                     const resData = res.data.data
                     // 表格数据
                     resData.data.forEach((items) => {
-                        var domainsList = []
-                        var domains = items.domain
-                        domains.forEach((item) => {
-                            domainsList.push(item.name)
-                        })
-                        items.domain = domainsList.join('\n')
+                        // var domainsList = []
+                        // var domains = items.domain
+                        // domains.forEach((item) => {
+                        //     domainsList.push(item.name)
+                        // })
+                        // items.domain = domainsList.join('\n')
+                        items.domainStr = items.domain.join('\n')
                     })
                     this.tableData = resData.data
                     // 分页数据 
@@ -563,6 +592,8 @@ export default {
                 }
             })
         },
+
+        // 清除缓存
         CacheDelete() {
             ManageCacheDelete().then((res) => {
                 if (res.data.code === 200) {
@@ -571,6 +602,79 @@ export default {
                     this.$message.errror('Cache delete failed, Please check the server of redis.')
                 }
             })
+        },
+        
+        // 一键申请证书
+        handleApplySSLAdd(row) {
+            this.$confirm('每次一个站点申请,域名 < 100, 当前页面会5秒刷新一次查询结果, 是否继续?', '提示', {
+                confirmButtonText: '申请',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(async () => {
+                if (this.task_id !== '') {
+                    this.$message.error('当前页面有站点在申请证书，请按 F5 先刷新页面!')
+                    return false;
+                }
+                await  ManageApplySSLAdd({id: row.id}).then(async (res) => {
+                    if (res.data.code === 200) {
+                        this.$message.success(res.data.msg)
+
+                        // this.task_id = res.data.data.task_id
+                        this.handleApplySSLShow(res.data.data.task_id)
+                    
+                    } else {
+                        this.$message.error(res.data.msg)
+                    }
+                })
+            }).catch(() => {
+                this.$message.info('取消!')
+            });
+
+        },
+        // // 查看证书申请情况
+         handleApplySSLShow(id) {
+            let count = 1
+            let intervalKey = setInterval(async () => { 
+
+            
+            await ManageApplySSLShow({ id: id }).then((res) => {
+                if (res.data.code === 200) {
+                    // console.log(res.data)
+                    var msgStr = res.data.msg
+                    msgStr.replace(/\\n/g, '<br/>')
+
+                    // 如果结果已经返回
+                    if (res.data.data.result === 0) {
+                        clearInterval(intervalKey)
+                        // 弹出模特框
+                        this.centerDialogVisible = true
+                        this.msgStr = msgStr
+                    } else {
+
+                        this.$message({
+                            dangerouslyUseHTMLString: true,
+                            message: '<div>' + msgStr + '</div>'
+                        });
+                        // console.log(res.data.data.result)
+                        // this.$message.success(res.data.msg)
+                    }
+
+
+
+                    
+                    
+                } else {
+                    this.$message.error(res.data.msg)
+                }
+            })
+                count++;
+
+                if (count > 100) {
+                    clearInterval(intervalKey);
+                    this.$message.error('申请证书错误,请查看 Redis 服务运行是否正常！');
+                } 
+            }, 5000)
+
         }
 
     },
@@ -578,6 +682,9 @@ export default {
     created() {
         this.getDataList()
     },
+    // beforeDestroy() {
+    //     clearTimeout(this.timer);
+    // }
     // mounted() {
     //     this.tableData = data.data.data
     // },
